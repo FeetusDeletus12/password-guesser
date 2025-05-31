@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Password Guesser</title>
+  <style>
+    body { font-family: Arial; text-align: center; margin-top: 50px; }
+    input { padding: 10px; margin: 5px; }
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <h1>🔐 Password Guesser</h1>
+
+  <div id="setup">
+    <input id="setPass" type="password" placeholder="Set 4-digit password" maxlength="4">
+    <button onclick="startGame()">Start</button>
+  </div>
+
+  <div id="guessArea" class="hidden">
+    <input id="guessInput" type="number" placeholder="Guess password" maxlength="4">
+    <button onclick="checkGuess()">Guess</button>
+    <p id="result"></p>
+  </div>
+
+  <script>
+    let password = "";
+
+    function startGame() {
+      password = document.getElementById("setPass").value;
+      if (password.length !== 4) {
+        alert("Password must be 4 digits.");
+        return;
+      }
+      document.getElementById("setup").classList.add("hidden");
+      document.getElementById("guessArea").classList.remove("hidden");
+    }
+
+    function checkGuess() {
+      const guess = document.getElementById("guessInput").value;
+      const result = document.getElementById("result");
+      if (guess === password) {
+        result.textContent = "✅ Correct! You guessed it!";
+      } else {
+        result.textContent = "❌ Nope! Try again.";
+      }
+    }
+  </script>
+</body>
+</html>
