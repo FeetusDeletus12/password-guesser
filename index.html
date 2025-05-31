@@ -1,14 +1,63 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
+  <meta charset="UTF-8">
   <title>Password Guesser</title>
   <style>
-    body { font-family: Arial; text-align: center; margin-top: 50px; }
-    input { padding: 10px; margin: 5px; }
-    .hidden { display: none; }
+    body {
+      font-family: Arial, sans-serif;
+      text-align: center;
+      margin: 50px;
+      background-color: #f5f5f5;
+    }
+
+    input, button {
+      padding: 10px;
+      margin: 10px;
+      font-size: 16px;
+    }
+
+    .hidden {
+      display: none;
+    }
+
+    .collapsible {
+      background-color: #0077cc;
+      color: white;
+      cursor: pointer;
+      padding: 10px;
+      width: 300px;
+      border: none;
+      text-align: left;
+      font-size: 16px;
+      margin: 20px auto;
+      border-radius: 8px;
+    }
+
+    .content {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease-out;
+      background-color: #e0e0e0;
+      margin: auto;
+      padding: 0 20px;
+      width: 300px;
+      border-radius: 8px;
+      text-align: left;
+    }
+
+    .content p {
+      margin: 10px 0;
+    }
+
+    #guessList {
+      list-style: none;
+      padding-left: 0;
+    }
   </style>
 </head>
 <body>
+
   <h1>🔐 Password Guesser</h1>
 
   <div id="setup">
@@ -18,32 +67,79 @@
 
   <div id="guessArea" class="hidden">
     <input id="guessInput" type="number" placeholder="Guess password" maxlength="4">
-    <button onclick="checkGuess()">Guess</button>
+    <button id="guessBtn" onclick="checkGuess()">Guess</button>
     <p id="result"></p>
+
+    <button type="button" class="collapsible">Show Guessed Passwords</button>
+    <div class="content">
+      <ul id="guessList"></ul>
+    </div>
+
+    <button id="restartBtn" class="hidden" onclick="restartGame()">🔁 Restart</button>
   </div>
 
   <script>
     let password = "";
+    let guessedPasswords = [];
 
     function startGame() {
-      password = document.getElementById("setPass").value;
-      if (password.length !== 4) {
+      const input = document.getElementById("setPass").value;
+      if (input.length !== 4 || isNaN(input)) {
         alert("Password must be 4 digits.");
         return;
       }
+      password = input;
+      guessedPasswords = [];
+      document.getElementById("guessList").innerHTML = "";
       document.getElementById("setup").classList.add("hidden");
       document.getElementById("guessArea").classList.remove("hidden");
+      document.getElementById("result").textContent = "";
+      document.getElementById("guessInput").value = "";
+      document.getElementById("guessInput").disabled = false;
+      document.getElementById("guessBtn").disabled = false;
+      document.getElementById("restartBtn").classList.add("hidden");
     }
 
     function checkGuess() {
       const guess = document.getElementById("guessInput").value;
       const result = document.getElementById("result");
+      if (guess.length !== 4 || isNaN(guess)) {
+        result.textContent = "⚠️ Must be a 4-digit number.";
+        return;
+      }
+
+      guessedPasswords.push(guess);
+      const list = document.getElementById("guessList");
+      const li = document.createElement("li");
+      li.textContent = guess;
+      list.appendChild(li);
+
       if (guess === password) {
         result.textContent = "✅ Correct! You guessed it!";
+        document.getElementById("guessInput").disabled = true;
+        document.getElementById("guessBtn").disabled = true;
+        document.getElementById("restartBtn").classList.remove("hidden");
       } else {
         result.textContent = "❌ Nope! Try again.";
       }
+
+      document.getElementById("guessInput").value = "";
     }
+
+    function restartGame() {
+      document.getElementById("setup").classList.remove("hidden");
+      document.getElementById("guessArea").classList.add("hidden");
+      document.getElementById("setPass").value = "";
+    }
+
+    // Collapsible logic
+    const coll = document.querySelector(".collapsible");
+    const content = document.querySelector(".content");
+
+    coll.addEventListener("click", () => {
+      content.style.maxHeight = content.style.maxHeight ? null : content.scrollHeight + "px";
+    });
   </script>
+
 </body>
 </html>
