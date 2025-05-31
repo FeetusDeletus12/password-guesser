@@ -8,7 +8,7 @@
       font-family: Arial, sans-serif;
       text-align: center;
       margin: 50px;
-      background-color: #f5f5f5;
+      background-color: #f0f2f5;
     }
 
     input, button {
@@ -60,17 +60,27 @@
       padding: 4px 0;
       border-bottom: 1px solid #ccc;
     }
+
+    #resultPage {
+      background-color: #ffffff;
+      padding: 20px;
+      border-radius: 10px;
+      width: 350px;
+      margin: auto;
+    }
   </style>
 </head>
 <body>
 
   <h1>🔐 Password Guesser</h1>
 
+  <!-- Setup Area -->
   <div id="setup">
     <input id="setPass" type="password" placeholder="Set 4-digit password" maxlength="4">
     <button onclick="startGame()">Start</button>
   </div>
 
+  <!-- Guessing Area -->
   <div id="guessArea" class="hidden">
     <input id="guessInput" type="number" placeholder="Guess password" maxlength="4">
     <button id="guessBtn" onclick="checkGuess()">Guess</button>
@@ -80,13 +90,24 @@
     <div class="content" id="guessBox">
       <ul id="guessList"></ul>
     </div>
+  </div>
 
-    <button id="restartBtn" class="hidden" onclick="restartGame()">🔁 Restart</button>
+  <!-- Result Page -->
+  <div id="resultPage" class="hidden">
+    <h2>🎉 You Guessed It!</h2>
+    <p><strong>Password:</strong> <span id="finalPass"></span></p>
+    <p><strong>Attempts:</strong> <span id="attemptsTaken"></span></p>
+    <p><strong>Time Taken:</strong> <span id="timeTaken"></span> seconds</p>
+    <h3>Guess History:</h3>
+    <ul id="historyList"></ul>
+    <button onclick="restartGame()">🔁 Restart</button>
+    <button onclick="saveResults()">💾 Save Results</button>
   </div>
 
   <script>
     let password = "";
     let guessedPasswords = [];
+    let startTime;
 
     function startGame() {
       const input = document.getElementById("setPass").value;
@@ -103,7 +124,7 @@
       document.getElementById("guessInput").value = "";
       document.getElementById("guessInput").disabled = false;
       document.getElementById("guessBtn").disabled = false;
-      document.getElementById("restartBtn").classList.add("hidden");
+      startTime = Date.now();
       updateGuessBoxSize();
     }
 
@@ -122,14 +143,10 @@
       const li = document.createElement("li");
       li.textContent = guess;
       list.appendChild(li);
-
       updateGuessBoxSize();
 
       if (guess === password) {
-        result.textContent = "✅ Correct! You guessed it!";
-        guessInput.disabled = true;
-        document.getElementById("guessBtn").disabled = true;
-        document.getElementById("restartBtn").classList.remove("hidden");
+        showResultPage();
       } else {
         result.textContent = "❌ Nope! Try again.";
       }
@@ -146,21 +163,50 @@
       }
     }
 
+    function showResultPage() {
+      const timeElapsed = Math.round((Date.now() - startTime) / 1000);
+
+      document.getElementById("finalPass").textContent = password;
+      document.getElementById("attemptsTaken").textContent = guessedPasswords.length;
+      document.getElementById("timeTaken").textContent = timeElapsed;
+
+      const histList = document.getElementById("historyList");
+      histList.innerHTML = "";
+      guessedPasswords.forEach(g => {
+        const li = document.createElement("li");
+        li.textContent = g;
+        histList.appendChild(li);
+      });
+
+      document.getElementById("guessArea").classList.add("hidden");
+      document.getElementById("resultPage").classList.remove("hidden");
+    }
+
     function restartGame() {
       document.getElementById("setup").classList.remove("hidden");
-      document.getElementById("guessArea").classList.add("hidden");
+      document.getElementById("resultPage").classList.add("hidden");
       document.getElementById("setPass").value = "";
     }
 
-    // Handle collapsible toggle
+    function saveResults() {
+      let text = `Password: ${password}\nAttempts: ${guessedPasswords.length}\nTime: ${Math.round((Date.now() - startTime)/1000)}s\n\nGuess History:\n${guessedPasswords.join("\n")}`;
+      const blob = new Blob([text], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = "password_guess_results.txt";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // Collapsible history
     const coll = document.querySelector(".collapsible");
     const content = document.querySelector(".content");
-
     coll.addEventListener("click", () => {
       content.classList.toggle("hidden");
     });
 
-    // Enter key support
+    // Press enter to guess
     document.getElementById("guessInput").addEventListener("keydown", function (event) {
       if (event.key === "Enter") {
         event.preventDefault();
