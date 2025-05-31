@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>Code Breaker Challenge</title>
   <style>
     body {
@@ -10,6 +10,8 @@
       color: #00ff99;
       font-family: monospace;
       padding: 20px;
+      margin: 0;
+      overflow-x: hidden;
     }
     #output {
       white-space: pre-wrap;
@@ -17,7 +19,8 @@
       padding: 15px;
       margin-top: 10px;
       border-radius: 5px;
-      min-height: 120px;
+      min-height: 60px;
+      transition: background-color 0.4s ease;
     }
     input[type="text"] {
       background: #000;
@@ -25,6 +28,7 @@
       border: 1px solid #0f0;
       padding: 5px;
       width: 200px;
+      font-size: 1rem;
     }
     button {
       background-color: #0f0;
@@ -33,108 +37,234 @@
       margin-left: 10px;
       cursor: pointer;
       font-weight: bold;
+      font-size: 1rem;
+      transition: background-color 0.3s ease;
     }
-    button:hover {
+    button:hover:not(:disabled) {
       background-color: #00cc66;
+    }
+    button:disabled {
+      background-color: #333;
+      cursor: not-allowed;
     }
     #level {
       font-weight: bold;
       color: #ff0;
       margin-bottom: 10px;
+      font-size: 1.3rem;
+    }
+    #menu {
+      background-color: #222;
+      padding: 10px;
+      border-radius: 5px;
+      max-width: 400px;
+      margin-bottom: 20px;
+      display: none;
+    }
+    #menu button {
+      display: block;
+      margin: 8px 0;
+      width: 100%;
+      text-align: left;
+    }
+    #hint {
+      color: #ccc;
+      margin-top: 10px;
+      font-style: italic;
+      font-size: 0.9rem;
     }
   </style>
 </head>
 <body>
   <h1>Code Breaker Challenge</h1>
   <div id="level">Level: 1</div>
+  <button id="homeBtn">Home</button>
+  <button id="updatePasswordsBtn">Update Passwords</button>
+
+  <div id="menu"></div>
+
   <div>
-    <input type="text" id="userGuess" placeholder="Enter code or answer" maxlength="8" />
-    <button onclick="submitInput()">Submit</button>
+    <input type="text" id="userGuess" placeholder="Enter code or answer" maxlength="4" autocomplete="off" />
+    <button id="submitBtn">Submit</button>
   </div>
-  <div id="output">Loading...</div>
+
+  <div id="hint"></div>
+  <div id="output"></div>
 
   <script>
-    let currentLevel = 1;
-    let codes = {};
-    let password = "";
-    let attempts = 0;
-    let gameStarted = false;
-    let history = [];
+    // Level data example with passwords and hints
+    let levels = [
+      { password: "9746", hint: "It's a 4-digit code, starts with 9." },
+      { password: "1234", hint: "A simple increasing sequence." },
+      { password: "2468", hint: "Even numbers only." },
+      { password: "0000", hint: "All zeros. Easy, right?" }
+    ];
 
-    // Press Enter to submit
-    document.getElementById("userGuess").addEventListener("keypress", function (e) {
+    let currentLevel = 0;
+    let attempts = 0;
+    let history = [];
+    let gameStarted = true;
+    let unlockedLevels = [0]; // Only level 0 unlocked initially
+
+    const output = document.getElementById("output");
+    const levelLabel = document.getElementById("level");
+    const hintDiv = document.getElementById("hint");
+    const userGuess = document.getElementById("userGuess");
+    const submitBtn = document.getElementById("submitBtn");
+    const homeBtn = document.getElementById("homeBtn");
+    const updatePasswordsBtn = document.getElementById("updatePasswordsBtn");
+    const menu = document.getElementById("menu");
+
+    // Start a level
+    function startLevel(levelIndex) {
+      if (!unlockedLevels.includes(levelIndex)) {
+        output.innerText = "Level is locked. Complete previous levels first.";
+        return;
+      }
+      currentLevel = levelIndex;
+      attempts = 0;
+      history = [];
+      gameStarted = true;
+      levelLabel.innerText = `Level: ${currentLevel + 1}`;
+      output.innerText = `Level ${currentLevel + 1}: Guess the code.`;
+      hintDiv.innerText = `Hint: ${levels[currentLevel].hint}`;
+      menu.style.display = "none";
+      userGuess.disabled = false;
+      submitBtn.disabled = false;
+      userGuess.focus();
+      animateOutputReset();
+    }
+
+    // Animate output background color flash for feedback
+    function animateOutput(color) {
+      output.style.backgroundColor = color;
+      setTimeout(() => {
+        output.style.backgroundColor = "#1e1e1e";
+      }, 500);
+    }
+    function animateOutputReset() {
+      output.style.backgroundColor = "#1e1e1e";
+    }
+
+    // Submit guess handler
+    function submitInput() {
+      if (!gameStarted) {
+        output.innerText = "Complete current challenges first!";
+        return;
+      }
+      const guess = userGuess.value.trim();
+      if (guess.length === 0) return;
+
+      userGuess.value = "";
+      attempts++;
+      history.push(guess);
+
+      if (guess === levels[currentLevel].password) {
+        animateOutput("#00ff00");
+        output.innerText = `Access Granted!\nAttempts: ${attempts}\nHistory: ${history.join(", ")}`;
+        gameStarted = false;
+        userGuess.disabled = true;
+        submitBtn.disabled = true;
+
+        // Unlock next level
+        if (currentLevel + 1 < levels.length && !unlockedLevels.includes(currentLevel + 1)) {
+          unlockedLevels.push(currentLevel + 1);
+        }
+
+        // Show next steps after a delay
+        setTimeout(() => {
+          showLevelCompleteScreen();
+        }, 1500);
+      } else {
+        animateOutput("#ff0000");
+        output.innerText = `Access Denied.\nAttempts: ${attempts}\nHistory: ${history.join(", ")}`;
+      }
+    }
+
+    // Show level complete screen with restart and next buttons
+    function showLevelCompleteScreen() {
+      output.innerText += `\n\nLevel ${currentLevel + 1} Complete!`;
+      const btnContainer = document.createElement("div");
+      btnContainer.style.marginTop = "10px";
+
+      const nextBtn = document.createElement("button");
+      nextBtn.innerText = currentLevel + 1 < levels.length ? "Next Level" : "Finish Game";
+      nextBtn.onclick = () => {
+        if (currentLevel + 1 < levels.length) {
+          startLevel(currentLevel + 1);
+        } else {
+          output.innerText = "Congratulations! You completed all levels!";
+          hintDiv.innerText = "";
+        }
+        btnContainer.remove();
+      };
+
+      const restartBtn = document.createElement("button");
+      restartBtn.innerText = "Restart Level";
+      restartBtn.style.marginLeft = "10px";
+      restartBtn.onclick = () => {
+        startLevel(currentLevel);
+        btnContainer.remove();
+      };
+
+      btnContainer.appendChild(nextBtn);
+      btnContainer.appendChild(restartBtn);
+      output.appendChild(btnContainer);
+    }
+
+    // Show level selection menu
+    function showMenu() {
+      menu.innerHTML = "<h3>Select a Level</h3>";
+      levels.forEach((lvl, i) => {
+        const lvlBtn = document.createElement("button");
+        lvlBtn.innerText = `Level ${i + 1}`;
+        if (!unlockedLevels.includes(i)) {
+          lvlBtn.disabled = true;
+          lvlBtn.innerText += " (Locked)";
+        }
+        lvlBtn.onclick = () => {
+          startLevel(i);
+        };
+        menu.appendChild(lvlBtn);
+      });
+      menu.style.display = "block";
+      output.innerText = "";
+      hintDiv.innerText = "";
+      userGuess.disabled = true;
+      submitBtn.disabled = true;
+    }
+
+    // Fetch passwords from JSON and update levels dynamically
+    async function updatePasswords() {
+      try {
+        const response = await fetch('codes.json');
+        if (!response.ok) throw new Error("Failed to fetch codes.json");
+        const data = await response.json();
+
+        // Assuming codes.json is an array of password strings:
+        levels = data.map(pwd => ({ password: pwd, hint: "New daily code, guess wisely!" }));
+
+        output.innerText = "Passwords updated successfully!";
+        hintDiv.innerText = "";
+        // Restart the current level with new password
+        startLevel(currentLevel);
+      } catch (err) {
+        output.innerText = `Error updating passwords: ${err.message}`;
+      }
+    }
+
+    // Event listeners
+    submitBtn.addEventListener("click", submitInput);
+    homeBtn.addEventListener("click", showMenu);
+    updatePasswordsBtn.addEventListener("click", updatePasswords);
+
+    // Allow Enter key to submit guess
+    userGuess.addEventListener("keyup", (e) => {
       if (e.key === "Enter") submitInput();
     });
 
-    async function loadCodes() {
-      try {
-        const res = await fetch("https://synthnode404.github.io/password-guesser/codes.json");
-        codes = await res.json();
-        password = codes[`level${currentLevel}`] || "";
-      } catch (err) {
-        document.getElementById("output").innerText = "⚠️ Failed to load codes.";
-        console.error("Error loading codes:", err);
-      }
-    }
-
-    async function startLevel() {
-      const output = document.getElementById("output");
-      const levelLabel = document.getElementById("level");
-      levelLabel.innerText = `Level: ${currentLevel}`;
-
-      await loadCodes();
-
-      if (!password) {
-        output.innerText = "🎉 You completed all available levels!";
-        gameStarted = false;
-        return;
-      }
-
-      if (currentLevel === 2) {
-        output.innerText = "Level 2: Solve this first — What is 12 + 3?";
-        gameStarted = false;
-      } else {
-        output.innerText = `Level ${currentLevel}: Guess the code.`;
-        gameStarted = true;
-      }
-    }
-
-    function submitInput() {
-      const input = document.getElementById("userGuess").value.trim();
-      const output = document.getElementById("output");
-      document.getElementById("userGuess").value = "";
-
-      if (!gameStarted && currentLevel === 2) {
-        if (input === "15") {
-          output.innerText = "✅ Correct! Now guess the 4-digit code.";
-          password = codes[`level${currentLevel}`];
-          gameStarted = true;
-        } else {
-          output.innerText = "❌ Incorrect answer. Try again: What is 12 + 3?";
-        }
-        return;
-      }
-
-      if (!gameStarted) {
-        output.innerText = "⛔ Complete the current challenge first!";
-        return;
-      }
-
-      attempts++;
-      history.push(input);
-
-      if (input === password) {
-        output.innerText = `✅ Access Granted!\nAttempts: ${attempts}\nHistory: ${history.join(", ")}`;
-        currentLevel++;
-        attempts = 0;
-        history = [];
-        setTimeout(startLevel, 3000);
-      } else {
-        output.innerText = `❌ Access Denied. Try again.\nAttempts: ${attempts}\nHistory: ${history.join(", ")}`;
-      }
-    }
-
-    startLevel();
+    // Initialize game
+    startLevel(0);
   </script>
 </body>
 </html>
