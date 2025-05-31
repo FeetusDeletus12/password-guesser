@@ -17,6 +17,7 @@
       padding: 15px;
       margin-top: 10px;
       border-radius: 5px;
+      min-height: 120px;
     }
     input[type="text"] {
       background: #000;
@@ -47,55 +48,75 @@
   <h1>Code Breaker Challenge</h1>
   <div id="level">Level: 1</div>
   <div>
-    <input type="text" id="userGuess" placeholder="Enter code or answer" maxlength="4" />
+    <input type="text" id="userGuess" placeholder="Enter code or answer" maxlength="8" />
     <button onclick="submitInput()">Submit</button>
   </div>
-  <div id="output"></div>
+  <div id="output">Loading...</div>
 
   <script>
     let currentLevel = 1;
-    let password = "9746";
+    let codes = {};
+    let password = "";
     let attempts = 0;
     let gameStarted = false;
     let history = [];
 
-    function startLevel() {
+    // Press Enter to submit
+    document.getElementById("userGuess").addEventListener("keypress", function (e) {
+      if (e.key === "Enter") submitInput();
+    });
+
+    async function loadCodes() {
+      try {
+        const res = await fetch("https://synthnode404.github.io/password-guesser/codes.json");
+        codes = await res.json();
+        password = codes[`level${currentLevel}`] || "";
+      } catch (err) {
+        document.getElementById("output").innerText = "⚠️ Failed to load codes.";
+        console.error("Error loading codes:", err);
+      }
+    }
+
+    async function startLevel() {
       const output = document.getElementById("output");
       const levelLabel = document.getElementById("level");
       levelLabel.innerText = `Level: ${currentLevel}`;
 
-      if (currentLevel === 1) {
-        output.innerText = "Level 1: Guess the 4-digit code.";
-        password = "9746"; // You can randomize this later
-        gameStarted = true;
-      } else if (currentLevel === 2) {
-        output.innerText = "Level 2: Solve this challenge first: What is 12 + 3?";
+      await loadCodes();
+
+      if (!password) {
+        output.innerText = "🎉 You completed all available levels!";
+        gameStarted = false;
+        return;
+      }
+
+      if (currentLevel === 2) {
+        output.innerText = "Level 2: Solve this first — What is 12 + 3?";
         gameStarted = false;
       } else {
-        output.innerText = "You won the game! More levels coming soon!";
-        gameStarted = false;
+        output.innerText = `Level ${currentLevel}: Guess the code.`;
+        gameStarted = true;
       }
     }
 
     function submitInput() {
-      const input = document.getElementById("userGuess").value;
+      const input = document.getElementById("userGuess").value.trim();
       const output = document.getElementById("output");
       document.getElementById("userGuess").value = "";
 
       if (!gameStarted && currentLevel === 2) {
         if (input === "15") {
-          output.innerText = "Correct! Now guess the 4-digit code.";
-          password = "1234"; // Code for level 2
+          output.innerText = "✅ Correct! Now guess the 4-digit code.";
+          password = codes[`level${currentLevel}`];
           gameStarted = true;
-          return;
         } else {
-          output.innerText = "Incorrect answer. Try again: What is 12 + 3?";
-          return;
+          output.innerText = "❌ Incorrect answer. Try again: What is 12 + 3?";
         }
+        return;
       }
 
       if (!gameStarted) {
-        output.innerText = "Complete the current challenge first!";
+        output.innerText = "⛔ Complete the current challenge first!";
         return;
       }
 
@@ -103,13 +124,13 @@
       history.push(input);
 
       if (input === password) {
-        output.innerText = `Access Granted!\nAttempts: ${attempts}\nGuessed Passwords: ${history.join(", ")}`;
+        output.innerText = `✅ Access Granted!\nAttempts: ${attempts}\nHistory: ${history.join(", ")}`;
         currentLevel++;
         attempts = 0;
         history = [];
         setTimeout(startLevel, 3000);
       } else {
-        output.innerText = `Access Denied. Try again.\nAttempts: ${attempts}\nHistory: ${history.join(", ")}`;
+        output.innerText = `❌ Access Denied. Try again.\nAttempts: ${attempts}\nHistory: ${history.join(", ")}`;
       }
     }
 
