@@ -35,24 +35,30 @@
     }
 
     .content {
-      max-height: 0;
       overflow: hidden;
-      transition: max-height 0.3s ease-out;
       background-color: #e0e0e0;
       margin: auto;
       padding: 0 20px;
       width: 300px;
       border-radius: 8px;
       text-align: left;
+      transition: all 0.3s ease;
     }
 
-    .content p {
-      margin: 10px 0;
+    .content.open {
+      padding-top: 10px;
+      padding-bottom: 10px;
     }
 
     #guessList {
       list-style: none;
       padding-left: 0;
+      margin: 0;
+    }
+
+    #guessList li {
+      padding: 4px 0;
+      border-bottom: 1px solid #ccc;
     }
   </style>
 </head>
@@ -71,7 +77,7 @@
     <p id="result"></p>
 
     <button type="button" class="collapsible">Show Guessed Passwords</button>
-    <div class="content">
+    <div class="content" id="guessBox">
       <ul id="guessList"></ul>
     </div>
 
@@ -98,11 +104,14 @@
       document.getElementById("guessInput").disabled = false;
       document.getElementById("guessBtn").disabled = false;
       document.getElementById("restartBtn").classList.add("hidden");
+      updateGuessBoxSize();
     }
 
     function checkGuess() {
-      const guess = document.getElementById("guessInput").value;
+      const guessInput = document.getElementById("guessInput");
+      const guess = guessInput.value;
       const result = document.getElementById("result");
+
       if (guess.length !== 4 || isNaN(guess)) {
         result.textContent = "⚠️ Must be a 4-digit number.";
         return;
@@ -114,16 +123,27 @@
       li.textContent = guess;
       list.appendChild(li);
 
+      updateGuessBoxSize();
+
       if (guess === password) {
         result.textContent = "✅ Correct! You guessed it!";
-        document.getElementById("guessInput").disabled = true;
+        guessInput.disabled = true;
         document.getElementById("guessBtn").disabled = true;
         document.getElementById("restartBtn").classList.remove("hidden");
       } else {
         result.textContent = "❌ Nope! Try again.";
       }
 
-      document.getElementById("guessInput").value = "";
+      guessInput.value = "";
+    }
+
+    function updateGuessBoxSize() {
+      const box = document.getElementById("guessBox");
+      if (guessedPasswords.length > 0) {
+        box.classList.add("open");
+      } else {
+        box.classList.remove("open");
+      }
     }
 
     function restartGame() {
@@ -132,12 +152,20 @@
       document.getElementById("setPass").value = "";
     }
 
-    // Collapsible logic
+    // Handle collapsible toggle
     const coll = document.querySelector(".collapsible");
     const content = document.querySelector(".content");
 
     coll.addEventListener("click", () => {
-      content.style.maxHeight = content.style.maxHeight ? null : content.scrollHeight + "px";
+      content.classList.toggle("hidden");
+    });
+
+    // Enter key support
+    document.getElementById("guessInput").addEventListener("keydown", function (event) {
+      if (event.key === "Enter") {
+        event.preventDefault();
+        document.getElementById("guessBtn").click();
+      }
     });
   </script>
 
