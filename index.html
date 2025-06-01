@@ -1,138 +1,387 @@
-<!DOCTYPE html>
+<!DOCTYPE html>Add commentMore actions
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Code Breaker Challenge</title>
-  <style>
-    body {
-      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-      background: linear-gradient(to right, #1e3c72, #2a5298);
-      color: #fff;
-      margin: 0;
-      padding: 0;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      min-height: 100vh;
-    }
-    header {
-      background-color: rgba(0, 0, 0, 0.3);
-      padding: 1rem 2rem;
-      width: 100%;
-      text-align: center;
-      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
-    }
-    h1 {
-      margin: 0;
-    }
-    main {
-      flex: 1;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 2rem;
-    }
-    .guess-box {
-      display: flex;
-      gap: 0.5rem;
-      margin-bottom: 1rem;
-    }
-    input[type="text"] {
-      width: 50px;
-      padding: 0.5rem;
-      border: none;
-      border-radius: 8px;
-      text-align: center;
-      font-size: 1.2rem;
-      background-color: #f1f1f1;
-      color: #000;
-    }
-    input[type="text"]:focus {
-      outline: 2px solid #4caf50;
-    }
-    button {
-      padding: 0.5rem 1rem;
-      background-color: #4caf50;
-      color: #fff;
-      border: none;
-      border-radius: 8px;
-      cursor: pointer;
-      font-size: 1rem;
-      transition: background-color 0.3s ease;
-    }
-    button:hover {
-      background-color: #45a049;
-    }
-    .history {
-      margin-top: 2rem;
-      width: 100%;
-      max-width: 500px;
-      background: rgba(255, 255, 255, 0.1);
-      padding: 1rem;
-      border-radius: 10px;
-    }
-    .guess-entry {
-      background: rgba(0, 0, 0, 0.2);
-      padding: 0.5rem;
-      border-radius: 6px;
-      margin-bottom: 0.5rem;
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Code Breaker Challenge - Upgraded</title>
+<style>
+  body {
+    background: #121212;
+    color: #00ff99;
+    font-family: 'Courier New', monospace;
+    padding: 20px;
+    user-select: none;
+  }
+  #level {
+    font-weight: bold;
+    color: #ffcc00;
+    font-size: 1.5em;
+    margin-bottom: 10px;
+    text-align: center;
+  }
+  input[type="text"] {
+    background: #000;
+    color: #0f0;
+    border: 2px solid #0f0;
+    padding: 8px;
+    font-size: 1.2em;
+    width: 160px;
+    letter-spacing: 0.2em;
+    text-align: center;
+  }
+  button {
+    background: #0f0;
+    border: none;
+    padding: 10px 18px;
+    margin-left: 12px;
+    cursor: pointer;
+    font-weight: bold;
+    font-size: 1em;
+    transition: background 0.3s ease;
+  }
+  button:hover:not(:disabled) {
+    background: #00cc66;
+  }
+  button:disabled {
+    background: #444;
+    cursor: not-allowed;
+  }
+  #output {
+    background: #1e1e1e;
+    padding: 15px;
+    margin-top: 15px;
+    border-radius: 8px;
+    min-height: 60px;
+    white-space: pre-wrap;
+    transition: opacity 0.5s ease;
+  }
+  #guessHistory {
+    margin-top: 15px;
+    background: #222;
+    padding: 10px;
+    border-radius: 6px;
+    max-height: 120px;
+    overflow-y: auto;
+    font-size: 0.9em;
+    color: #ccc;
+  }
+  #hint {
+    margin-top: 10px;
+    font-style: italic;
+    color: #99ff99;
+  }
+  #upgrades {
+    margin-top: 15px;
+  }
+  .upgrade-btn {
+    background: #006600;
+    border: 1px solid #00ff00;
+    margin: 5px;
+    padding: 8px 14px;
+    cursor: pointer;
+    font-size: 0.9em;
+  }
+  .upgrade-btn:disabled {
+    background: #003300;
+    border-color: #004400;
+    cursor: not-allowed;
+  }
+  #progressBarContainer {
+    width: 100%;
+    background: #333;
+    height: 15px;
+    border-radius: 8px;
+    margin-top: 15px;
+    overflow: hidden;
+  }
+  #progressBar {
+    height: 100%;
+    background: #00ff66;
+    width: 0;
+    transition: width 0.3s ease;
+  }
+  #gameOverScreen {
+    display: none;
+    margin-top: 20px;
+    background: #111;
+    padding: 20px;
+    border-radius: 10px;
+    text-align: center;
+  }
+  #gameOverScreen button {
+    margin-top: 15px;
+  }
+</style>
 </head>
 <body>
-  <header>
-    <h1>Code Breaker Challenge</h1>
-  </header>
-  <main>
-    <div class="guess-box" id="guess-box">
-      <input type="text" maxlength="1" />
-      <input type="text" maxlength="1" />
-      <input type="text" maxlength="1" />
-      <input type="text" maxlength="1" />
-      <button id="submitGuess">Guess</button>
-    </div>
-    <div class="history" id="guess-history">
-      <h3>Guess History</h3>
-      <div id="history-entries"></div>
-    </div>
-  </main>
-  <script>
-    const inputs = document.querySelectorAll('.guess-box input');
-    const submitButton = document.getElementById('submitGuess');
 
-    inputs.forEach((input, index) => {
-      input.addEventListener('input', () => {
-        if (input.value && index < inputs.length - 1) {
-          inputs[index + 1].focus();
-        }
-      });
 
-      input.addEventListener('keydown', (event) => {
-        if (event.key === 'Enter') {
-          submitGuess();
-        }
-      });
-    });
 
-    submitButton.addEventListener('click', submitGuess);
 
-    function submitGuess() {
-      const guess = Array.from(inputs).map(input => input.value).join('');
-      if (guess.length !== 4) {
-        alert('Enter a 4-digit code.');
-        return;
+
+
+
+<h1 style="text-align:center;">Code Breaker Challenge</h1>
+<div id="level">Level: 1</div>
+
+<div style="text-align:center;">
+  <input type="text" id="userGuess" maxlength="4" placeholder="Enter 4-digit code" autofocus />
+  <button id="submitBtn">Guess</button>
+</div>
+
+<div id="output"></div>
+<div id="hint"></div>
+
+<div id="progressBarContainer">
+  <div id="progressBar"></div>
+</div>
+
+<div id="guessHistory"><strong>Guess History:</strong><br /></div>
+
+<div id="upgrades">
+  <strong>Upgrades:</strong><br />
+  <button id="revealDigit" class="upgrade-btn">Reveal 1 Digit (Cost: 5 guesses)</button>
+  <button id="extraGuess" class="upgrade-btn">Extra Guesses +3 (Cost: 10 guesses)</button>
+</div>
+
+<div id="gameOverScreen">
+  <h2>Access Granted!</h2>
+  <p id="summary"></p>
+  <button id="restartBtn">Restart Game</button>
+</div>
+
+<script>
+  let level = 1;
+  let password = generatePassword();
+  let attempts = 0;
+  let maxAttempts = 30;
+  let guessHistory = [];
+  let upgrades = {
+    revealUsed: false,
+    extraGuessesUsed: false
+
+
+
+
+
+  };
+
+  const output = document.getElementById("output");
+  const hintBox = document.getElementById("hint");
+  const historyBox = document.getElementById("guessHistory");
+  const levelLabel = document.getElementById("level");
+  const userGuess = document.getElementById("userGuess");
+  const submitBtn = document.getElementById("submitBtn");
+  const progressBar = document.getElementById("progressBar");
+  const revealBtn = document.getElementById("revealDigit");
+  const extraGuessBtn = document.getElementById("extraGuess");
+  const gameOverScreen = document.getElementById("gameOverScreen");
+  const summary = document.getElementById("summary");
+  const restartBtn = document.getElementById("restartBtn");
+
+  function generatePassword() {
+    return Array.from({ length: 4 }, () => Math.floor(Math.random() * 10)).join('');
+
+
+  }
+
+  function updateUI() {
+    levelLabel.innerText = `Level: ${level}`;
+    progressBar.style.width = `${(attempts / maxAttempts) * 100}%`;
+    historyBox.innerHTML = "<strong>Guess History:</strong><br>" + guessHistory.join(", ");
+  }
+
+  function getHint(guess, pass) {
+    let correctPos = 0;
+    let correctDigit = 0;
+    let passArr = pass.split('');
+    let guessArr = guess.split('');
+    let usedInPass = [false, false, false, false];
+    let usedInGuess = [false, false, false, false];
+
+    // Check digits in the right position
+    for (let i = 0; i < 4; i++) {
+      if (guessArr[i] === passArr[i]) {
+        correctPos++;
+        usedInPass[i] = true;
+        usedInGuess[i] = true;
+
+
+
+
+
       }
 
-      const history = document.getElementById('history-entries');
-      const entry = document.createElement('div');
-      entry.classList.add('guess-entry');
-      entry.textContent = `You guessed: ${guess}`;
-      history.prepend(entry);
 
-      inputs.forEach(input => input.value = '');
-      inputs[0].focus();
     }
-  </script>
+
+
+    // Check correct digits in wrong positions
+    for (let i = 0; i < 4; i++) {
+      if (usedInGuess[i]) continue;
+      for (let j = 0; j < 4; j++) {
+        if (usedInPass[j]) continue;
+        if (guessArr[i] === passArr[j]) {
+          correctDigit++;
+          usedInPass[j] = true;
+          break;
+        }
+      }
+    }
+
+    return `Digits correct and in right position: ${correctPos}, Digits correct but wrong position: ${correctDigit}`;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  }
+
+  function handleGuess() {
+    let guess = userGuess.value.trim();
+    if (guess.length !== 4 || !/^\d{4}$/.test(guess)) {
+      output.innerText = "Please enter a valid 4-digit number.";
+      return;
+    }
+    if (attempts >= maxAttempts) {
+      output.innerText = "Max attempts reached! Try an upgrade or restart.";
+      return;
+    }
+    if (guessHistory.includes(guess)) {
+      output.innerText = "You already guessed that code!";
+      return;
+    }
+
+    attempts++;
+    guessHistory.push(guess);
+
+    if (guess === password) {
+      gameWin();
+
+
+
+
+
+      return;
+    } else {
+      output.innerText = "Access Denied.";
+      hintBox.innerText = getHint(guess, password);
+      updateUI();
+    }
+
+    if (attempts >= maxAttempts) {
+      output.innerText = "Game Over! Max attempts reached.";
+      hintBox.innerText = `The correct code was: ${password}`;
+      lockGame();
+    }
+    userGuess.value = "";
+    userGuess.focus();
+  }
+
+  function gameWin() {
+    output.innerText = "";
+    hintBox.innerText = "";
+    gameOverScreen.style.display = "block";
+    summary.innerText = `Level ${level} cleared!\nAttempts: ${attempts}\nGuesses: ${guessHistory.join(", ")}`;
+    lockGame();
+  }
+
+  function lockGame() {
+    userGuess.disabled = true;
+    submitBtn.disabled = true;
+    revealBtn.disabled = true;
+    extraGuessBtn.disabled = true;
+  }
+
+
+  function unlockGame() {
+    userGuess.disabled = false;
+    submitBtn.disabled = false;
+    revealBtn.disabled = false;
+    extraGuessBtn.disabled = false;
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+  }
+
+  function restartGame() {
+    level++;
+    password = generatePassword();
+    attempts = 0;
+    guessHistory = [];
+    upgrades.revealUsed = false;
+    upgrades.extraGuessesUsed = false;
+    output.innerText = `Level ${level}: Guess the 4-digit code!`;
+    hintBox.innerText = "";
+    gameOverScreen.style.display = "none";
+    unlockGame();
+    updateUI();
+    userGuess.value = "";
+    userGuess.focus();
+  }
+
+  revealBtn.addEventListener("click", () => {
+    if (upgrades.revealUsed) return;
+    if (attempts < 5) {
+      output.innerText = "You need at least 5 guesses to unlock this upgrade.";
+      return;
+    }
+    let revealIndex = Math.floor(Math.random() * 4);
+    output.innerText = `Upgrade used! Digit ${revealIndex + 1} is: ${password[revealIndex]}`;
+    upgrades.revealUsed = true;
+  });
+
+
+  extraGuessBtn.addEventListener("click", () => {
+    if (upgrades.extraGuessesUsed) return;
+    if (attempts < 10) {
+      output.innerText = "You need at least 10 guesses to unlock this upgrade.";
+      return;
+    }
+    maxAttempts += 3;
+    output.innerText = "Upgrade used! You get 3 extra guesses.";
+    upgrades.extraGuessesUsed = true;
+
+    updateUI();
+  });
+
+  submitBtn.addEventListener("click", handleGuess);
+  userGuess.addEventListener("keydown", e => {
+    if (e.key === "Enter") handleGuess();
+  });
+  
+  restartBtn.addEventListener("click", () => {
+    // Reset game to level 1 for simplicity
+    level = 1;
+    maxAttempts = 30;
+    restartGame();
+  });
+
+  // Initialize
+  output.innerText = "Guess the 4-digit code!";
+  updateUI();
+  userGuess.focus();
+</script>
+
 </body>
 </html>
